@@ -1,0 +1,22 @@
+[project]
+name = "fulgur"
+version = "0.1.0"
+description = "Large (OOM) linear models"
+# readme = "README.md"
+authors = [
+    { name = "Daniel Molitor", email = "molitdj97@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "cloudpickle>=3.1.2",
+    "formulaic>=1.2.1",
+    "polars>=1.35.2",
+    "pyarrow>=22.0.0",
+    "scikit-learn>=1.7.2",
+    "statsmodels>=0.14.5",
+    "tqdm>=4.67.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
