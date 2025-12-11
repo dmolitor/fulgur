@@ -1,6 +1,3 @@
-# Load data
-
-
 # fulgur
 
 The goal of fulgur is to facilitate estimating a variety of linear
@@ -22,6 +19,8 @@ First we’ll load the necessary packages.
 from fulgur.regression import LargeLinearRegressor
 import polars as pl
 ```
+
+## Load data
 
 We’ll load the airlines dataset from AWS as a [lazy
 DataFrame](https://docs.pola.rs/user-guide/lazy/using/). This dataset
