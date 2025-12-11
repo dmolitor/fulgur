@@ -1,5 +1,6 @@
 # fulgur
 
+
 The goal of fulgur is to facilitate estimating a variety of linear
 models on extremely large (e.g. out-of-core) datasets. fulgur provides a
 simple but flexible interface, allowing model specification via formula
@@ -124,10 +125,10 @@ print(f"OLS RMSE: {round(float(ols_rmse), 3)}")
 
 </details>
 
-    SGD Coefficients: [8.841, 28.623, -1.715]
+    SGD Coefficients: [8.853, 28.712, -1.719]
     OLS Coefficients: [7.034, 26.378, -0.744]
     -----------------------------------------
-    SGD RMSE: 14.183
+    SGD RMSE: 14.187
     OLS RMSE: 14.284
 
 We see that our fulgur SGD-based OLS model achieves similar (slightly

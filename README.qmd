@@ -1,8 +1,7 @@
 ---
+title: fulgur
 format: gfm
 ---
-
-# fulgur
 
 The goal of fulgur is to facilitate estimating a variety of linear models on
 extremely large (e.g. out-of-core) datasets. fulgur provides a simple but flexible interface,
