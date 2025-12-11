@@ -1,9 +1,6 @@
 import formulaic as fml
-from pathlib import Path
 import polars as pl
 from sklearn.linear_model import SGDClassifier, SGDRegressor
-import statsmodels.formula.api as smf
-import statsmodels.api as sm
 from typing import Any, Callable
 
 from fulgur.call_py import call_py, stream_data
@@ -23,9 +20,10 @@ class LargeLinearRegressor:
         query: Callable[[pl.LazyFrame], pl.LazyFrame] | None = None,
         batch_size: int = 1000,
         type: str = "ols",
-        learning_rate: str = "adaptive",
+        learning_rate: str = "invscaling",
         **kwargs
     ):
+        self._fitted = False
         self.batch_size = batch_size
         self.formula = fml.Formula(formula)
         loss, penalty = sgd_config_regression(type)
@@ -37,19 +35,29 @@ class LargeLinearRegressor:
         if "penalty" in kwargs:
             penalty = kwargs["penalty"]
             del kwargs["penalty"]
-        self.model = SGDRegressor(loss=loss, penalty=penalty, learning_rate=learning_rate, fit_intercept=False, **kwargs)
+        self.model = SGDRegressor(
+            loss=loss,
+            penalty=penalty,
+            learning_rate=learning_rate,
+            fit_intercept=False,
+            **kwargs
+        )
         self.query = query
-        self.stats = summary_stats(data, formula)
 
         # Append necessary queries prior to model fitting
         data = query(data) if query else data
+
+        # Calculate necessary summary stats for feature transformation
+        self.stats = summary_stats(data, formula)
         data = scale_numeric(data=data, stats=self.stats)
         data = encode_categorical(data=data, formula=formula)
+
+        # Store data for model fitting
         self.data = data
     
     def prep(self, data: pl.DataFrame, output=["numpy", "sparse", "narwhals", "pandas"]) -> Any:
         output = output[0] if isinstance(output, list) else output
-        return self.formula.get_model_matrix(data, output=output)
+        return self.formula.get_model_matrix(data, output=output, na_action="ignore")
     
     def fit(self, verbose: bool = True):
         def fitting_fn(data: pl.DataFrame):
@@ -58,24 +66,66 @@ class LargeLinearRegressor:
             y = prepped.lhs.toarray().ravel()
             self.model.partial_fit(X=X, y=y)
             return self.model
-        fitted_model = call_py(stream_data, data=self.data, fn=fitting_fn, last=True, verbose=verbose)
+        fitted_model = call_py(
+            stream_data,
+            data=self.data,
+            fn=fitting_fn,
+            batch_size=self.batch_size,
+            last=True,
+            verbose=verbose
+        )
         self.model = fitted_model
+        self._fitted = True
 
-if __name__ == "__main__":
-    base_dir = Path(__file__).resolve().parent.parent.parent
-    airline = pl.scan_parquet(base_dir / "data" / "airline")
-    llm = LargeLinearRegressor(
-        formula="arrival_delay ~ departure_delay + year + day_of_week + scheduled_elapsed_time",
-        data=airline,
-        query=lambda x: x.filter(pl.col("cancelled").ne(1)),
-        batch_size=5000,
-        type="ols_robust"
-    )
-    llm.fit()
-    print(f"SGD Coef: {llm.model.coef_}")
+    def predict(self, data: pl.LazyFrame | pl.DataFrame):
+        if not self._fitted:
+            raise ValueError("Model must be fitted before predictions can be made.")
+        data = self.query(data) if self.query else data
+        stats = self.stats
+        data = scale_numeric(data=data, stats=stats)
+        data = encode_categorical(data=data, formula=self.formula)
+        if isinstance(data, pl.LazyFrame):
+            data = self.prep(data.collect(engine="streaming"), output="sparse")
+        elif isinstance(data, pl.DataFrame):
+            data = self.prep(data, output="sparse")
+        else:
+            raise TypeError("Internal error; data is neither a Polars LazyFrame nor DataFrame")
+        X = data.rhs
+        return self.model.predict(X)
+    
+    def fit_with_error(self, data: pl.LazyFrame, error_fn: Callable, verbose: bool = True):
+        # TODO: right now a lot of code is duplicated from fit; at some point refactor
+        formula = self.formula.lhs.required_variables
+        if len(formula) != 1:
+            raise ValueError("Malformed formula. LHS must be a single variable.")
+        if self.query:
+            y_truth = self.query(data).select(pl.col(formula.pop()))
+        else:
+            y_truth = data.select(pl.col(formula.pop()))
+        y_truth = y_truth.collect(engine="streaming").to_series().to_numpy()
 
-    comparison_data = llm.prep(airline.filter(pl.col("cancelled").ne(1)).collect(), output="numpy")
-    X = comparison_data.rhs
-    y = comparison_data.lhs.ravel()
-    results = sm.OLS(y, X).fit()
-    print(results.summary())
+        def fitting_fn(d: pl.DataFrame):
+            if not hasattr(self, "error"):
+                self.error = list()
+            # Prep data and partially fit
+            prepped = self.prep(d, output="sparse")
+            X = prepped.rhs
+            y = prepped.lhs.toarray().ravel()
+            self.model.partial_fit(X=X, y=y)
+            self._fitted = True
+            # Predict on hold-out data and calculate hold-out error
+            y_pred = self.predict(data)
+            error = error_fn(y_truth, y_pred)
+            self.error.append(error)
+            return (self.model, self.error)
+        
+        fitted_model = call_py(
+            stream_data,
+            data=self.data,
+            fn=fitting_fn,
+            batch_size=self.batch_size,
+            last=True,
+            verbose=verbose
+        )
+        self.model, self.error = fitted_model
+        self._fitted = True

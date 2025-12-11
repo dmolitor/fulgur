@@ -129,9 +129,6 @@ def split_schema(data: pl.LazyFrame | pl.DataFrame) -> Dict[str, List[str]]:
                              pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
                              pl.Float32, pl.Float64)):
             numeric.append(col)
-        # TODO: I don't think we want this to raise an error on unsupported dtypes
-        # else: 
-        #     raise TypeError(f"Unsupported dtype for column '{col}': {dt}")
 
     return {"numeric": numeric, "categorical": categorical, "string": string}
 

@@ -64,15 +64,22 @@ def stream_data(
     """
     Apply an arbitrary function to a stream of data and collect the results (if any).
     """
+    if not isinstance(data, pl.LazyFrame):
+        raise ValueError("`data` must be a Polars LazyFrame object")
     if query:
         data = query(data)
     # Running with n_chunks may add unnecessary overhead; TODO: test on massive (billions?) dataset
-    n_chunks = (nrow(data) // batch_size) + 1
+    nrow_data = nrow(data)
+    # Calculate the total number of chunks to be processed
+    if (nrow_data % batch_size) == 0:
+        n_chunks = nrow_data // batch_size
+    else:
+        n_chunks = (nrow(data) // batch_size) + 1
+    # Create a (potentially tqdm-wrapped) iterator
     if verbose:
         chunks = tqdm(
             data.collect_batches(chunk_size=batch_size),
-            total=n_chunks,
-            bar_format="{l_bar}{bar} | [{elapsed}<{remaining} | {rate_fmt}]"
+            total=n_chunks
         )
     else:
         chunks = data.collect_batches(chunk_size=batch_size)
