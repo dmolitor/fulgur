@@ -10,8 +10,9 @@ from fulgur.utils import (
     encode_categorical,
     scale_numeric,
     sgd_config_regression,
-    summary_stats
+    summary_stats,
 )
+
 
 class LargeLinearRegressor(BaseEstimator, FulgurModel):
 
@@ -23,7 +24,7 @@ class LargeLinearRegressor(BaseEstimator, FulgurModel):
         batch_size: int = 1000,
         type: str = "ols",
         learning_rate: str = "invscaling",
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self._fitted = False
@@ -43,7 +44,7 @@ class LargeLinearRegressor(BaseEstimator, FulgurModel):
             penalty=penalty,
             learning_rate=learning_rate,
             fit_intercept=False,
-            **kwargs
+            **kwargs,
         )
         self.query = query
 
@@ -57,7 +58,7 @@ class LargeLinearRegressor(BaseEstimator, FulgurModel):
 
         # Store data for model fitting
         self.data = data
-    
+
     def fit(self, verbose: bool = True):
         def fitting_fn(data: pl.DataFrame):
             prepped = self.prep(data, output="sparse")
@@ -65,13 +66,14 @@ class LargeLinearRegressor(BaseEstimator, FulgurModel):
             y = prepped.lhs.toarray().ravel()
             self.model.partial_fit(X=X, y=y)
             return self.model
+
         fitted_model = call_py(
             stream_data,
             data=self.data,
             fn=fitting_fn,
             batch_size=self.batch_size,
             last=True,
-            verbose=verbose
+            verbose=verbose,
         )
         self.model = fitted_model
         self._fitted = True

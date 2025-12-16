@@ -6,6 +6,7 @@ from typing import Any, Callable, List
 
 from fulgur.utils import nrow
 
+
 def _worker(fn_bytes: bytes, args_bytes: bytes, return_queue: mp.Queue):
     try:
         fn = cp.loads(fn_bytes)
@@ -41,6 +42,7 @@ def call_py(function: Callable[..., Any], *args, **kwargs) -> Any:
 
     return cp.loads(result_bytes)
 
+
 # Stream data from a Polars LazyFrame object and apply a function to all chunks
 # and return the result. You may ask, why on earth execut this in a sub-process??
 # The answer is because Polars is, in this case, stupid (sadly)! Basically, it
@@ -55,11 +57,11 @@ def call_py(function: Callable[..., Any], *args, **kwargs) -> Any:
 # much slower...
 def stream_data(
     data: pl.LazyFrame,
-    fn: Callable[[pl.DataFrame], Any], # Function to apply to each chunk
-    query: Callable[[pl.LazyFrame], Any] | None = None, # Additional querying to do
+    fn: Callable[[pl.DataFrame], Any],  # Function to apply to each chunk
+    query: Callable[[pl.LazyFrame], Any] | None = None,  # Additional querying to do
     batch_size: int = 1000,
-    last: bool = False, # Return only the last result (as opposed to all results)
-    verbose: bool = True # Print progress
+    last: bool = False,  # Return only the last result (as opposed to all results)
+    verbose: bool = True,  # Print progress
 ) -> List[Any] | None:
     """
     Apply an arbitrary function to a stream of data and collect the results (if any).
@@ -77,10 +79,7 @@ def stream_data(
         n_chunks = (nrow(data) // batch_size) + 1
     # Create a (potentially tqdm-wrapped) iterator
     if verbose:
-        chunks = tqdm(
-            data.collect_batches(chunk_size=batch_size),
-            total=n_chunks
-        )
+        chunks = tqdm(data.collect_batches(chunk_size=batch_size), total=n_chunks)
     else:
         chunks = data.collect_batches(chunk_size=batch_size)
     # Collect results of function applied to full dataset

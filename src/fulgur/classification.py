@@ -12,8 +12,9 @@ from fulgur.utils import (
     scale_numeric,
     sgd_config_classification,
     summary_stats,
-    unique
+    unique,
 )
+
 
 class LargeLinearClassifier(BaseEstimator, FulgurModel):
 
@@ -26,7 +27,7 @@ class LargeLinearClassifier(BaseEstimator, FulgurModel):
         type: str = "logistic",
         learning_rate: str = "invscaling",
         eta0: float = 0.01,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self._fitted = False
@@ -50,7 +51,7 @@ class LargeLinearClassifier(BaseEstimator, FulgurModel):
             learning_rate=learning_rate,
             fit_intercept=False,
             eta0=eta0,
-            **kwargs
+            **kwargs,
         )
         self.query = query
 
@@ -67,7 +68,7 @@ class LargeLinearClassifier(BaseEstimator, FulgurModel):
 
         # Store data for model fitting
         self.data = data
-    
+
     def fit(self, verbose: bool = True):
         def fitting_fn(data: pl.DataFrame):
             prepped = self.prep(data, output="sparse")
@@ -75,13 +76,14 @@ class LargeLinearClassifier(BaseEstimator, FulgurModel):
             y = prepped.lhs.toarray().ravel()
             self.model.partial_fit(X=X, y=y, classes=self._classes)
             return self.model
+
         fitted_model = call_py(
             stream_data,
             data=self.data,
             fn=fitting_fn,
             batch_size=self.batch_size,
             last=True,
-            verbose=verbose
+            verbose=verbose,
         )
         self.model = fitted_model
         self._fitted = True

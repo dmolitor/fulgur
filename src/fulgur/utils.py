@@ -3,10 +3,13 @@ import math
 import polars as pl
 from typing import Dict, List
 
-def categorical_enum(data: pl.LazyFrame, col: str, ref: str | None = None, cast_to_string: bool = False) -> pl.Enum:
+
+def categorical_enum(
+    data: pl.LazyFrame, col: str, ref: str | None = None, cast_to_string: bool = False
+) -> pl.Enum:
     """
     Construct an Enum object from unique LazyFrame column values.
-    
+
     Parameters
     ----------
     df: pl.LazyFrame
@@ -22,7 +25,7 @@ def categorical_enum(data: pl.LazyFrame, col: str, ref: str | None = None, cast_
         Whether to cast the column to a string before exracting unique values.
         This is helpful e.g. when a categorical variable is stored as a numeric
         datatype like an integer.
-    
+
     Returns
     -------
     pl.Enum
@@ -34,8 +37,7 @@ def categorical_enum(data: pl.LazyFrame, col: str, ref: str | None = None, cast_
     else:
         query = data.select(pl.col(col))
     vals = (
-        query
-        .unique(pl.col(col))
+        query.unique(pl.col(col))
         .sort(pl.col(col))
         .collect(engine="streaming")
         .to_series()
@@ -47,6 +49,7 @@ def categorical_enum(data: pl.LazyFrame, col: str, ref: str | None = None, cast_
         vals.remove(ref)
         vals.insert(0, ref)
     return pl.Enum(vals)
+
 
 def encode_categorical(data: pl.LazyFrame, formula: str) -> pl.LazyFrame:
     schema = split_schema(data)
@@ -60,13 +63,16 @@ def encode_categorical(data: pl.LazyFrame, formula: str) -> pl.LazyFrame:
             data = data.with_columns(pl.col(col).cast(enum).alias(col))
     return data
 
+
 def formula_terms(formula: str) -> List[str]:
     """Return all non-lhs formula variables"""
     formula = fml.Formula(formula)
     if hasattr(formula, "lhs"):
         lhs_var = formula.lhs.required_variables
         if len(lhs_var) > 1:
-            raise ValueError(f"Formula lhs must be a single variable; currently {formula.lhs}")
+            raise ValueError(
+                f"Formula lhs must be a single variable; currently {formula.lhs}"
+            )
     else:
         lhs_var = []
     try:
@@ -76,18 +82,25 @@ def formula_terms(formula: str) -> List[str]:
     required_vars = [x for x in required_vars if x not in lhs_var]
     return required_vars
 
+
 def lhs(formula: fml.Formula) -> str:
     if not hasattr(formula, "lhs"):
         raise ValueError("The provided formula is missing a response variable")
     y = formula.lhs.required_variables
     if len(y) > 1:
-        raise ValueError(f"Formula response variable must be a single variable; currently {formula.lhs}")
+        raise ValueError(
+            f"Formula response variable must be a single variable; currently {formula.lhs}"
+        )
     return y.pop()
+
 
 def nrow(df: pl.LazyFrame) -> int:
     return df.select(pl.len()).collect(engine="streaming").item()
 
-def scale_numeric(data: pl.DataFrame, stats: Dict[str, Dict[str, float]]) -> pl.DataFrame:
+
+def scale_numeric(
+    data: pl.DataFrame, stats: Dict[str, Dict[str, float]]
+) -> pl.DataFrame:
     if stats:
         for col, stat in stats.items():
             mean = stat["mean"]
@@ -96,6 +109,7 @@ def scale_numeric(data: pl.DataFrame, stats: Dict[str, Dict[str, float]]) -> pl.
                 std = 1.0
             data = data.with_columns(((pl.col(col) - mean) / std).alias(col))
     return data
+
 
 def sgd_config_regression(kind: str):
     kind = kind.lower()
@@ -112,6 +126,7 @@ def sgd_config_regression(kind: str):
     if kind not in mapping:
         raise ValueError(f"Unknown model type: {kind}. Allowed: {list(mapping.keys())}")
     return mapping[kind]
+
 
 def sgd_config_classification(kind: str):
     kind = kind.lower()
@@ -130,11 +145,12 @@ def sgd_config_classification(kind: str):
         # robust losses
         "huber": ("huber", "l2"),
         "huber_l1": ("huber", "l1"),
-        "huber_elasticnet": ("huber", "elasticnet")
+        "huber_elasticnet": ("huber", "elasticnet"),
     }
     if kind not in mapping:
         raise ValueError(f"Unknown model type: {kind}. Allowed: {list(mapping.keys())}")
     return mapping[kind]
+
 
 def split_schema(data: pl.LazyFrame | pl.DataFrame) -> Dict[str, List[str]]:
     """
@@ -156,12 +172,25 @@ def split_schema(data: pl.LazyFrame | pl.DataFrame) -> Dict[str, List[str]]:
             categorical.append(col)
         elif isinstance(dt, pl.Utf8):
             string.append(col)
-        elif isinstance(dt, (pl.Int8, pl.Int16, pl.Int32, pl.Int64,
-                             pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
-                             pl.Float32, pl.Float64)):
+        elif isinstance(
+            dt,
+            (
+                pl.Int8,
+                pl.Int16,
+                pl.Int32,
+                pl.Int64,
+                pl.UInt8,
+                pl.UInt16,
+                pl.UInt32,
+                pl.UInt64,
+                pl.Float32,
+                pl.Float64,
+            ),
+        ):
             numeric.append(col)
 
     return {"numeric": numeric, "categorical": categorical, "string": string}
+
 
 def summary_stats(data: pl.LazyFrame, formula: str) -> Dict[str, Dict[str, float]]:
     stats = dict()
@@ -175,25 +204,18 @@ def summary_stats(data: pl.LazyFrame, formula: str) -> Dict[str, Dict[str, float
         for c in numeric_cols:
             exprs.append(pl.col(c).mean().alias(f"{c}_mean"))
             exprs.append(pl.col(c).std().alias(f"{c}_std"))
-        out = (
-            data
-            .select(exprs)
-            .collect(engine="streaming")
-        )
+        out = data.select(exprs).collect(engine="streaming")
         stats = {
-            col: {
-                "mean": out[f"{col}_mean"].item(),
-                "std":  out[f"{col}_std"].item()
-            }
+            col: {"mean": out[f"{col}_mean"].item(), "std": out[f"{col}_std"].item()}
             for col in numeric_cols
         }
     return stats
 
+
 def unique(data: pl.LazyFrame, col: str):
     """Get unique values from a LazyFrame column"""
     return (
-        data
-        .select(pl.col(col))
+        data.select(pl.col(col))
         .unique(pl.col(col))
         .sort(pl.col(col))
         .collect(engine="streaming")

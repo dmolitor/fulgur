@@ -3,12 +3,15 @@ from typing import Any, Callable
 
 from fulgur.utils import encode_categorical, scale_numeric
 
+
 class FulgurModel:
 
     def __init__(self):
         pass
-    
-    def prep(self, data: pl.DataFrame, output=["numpy", "sparse", "narwhals", "pandas"]) -> Any:
+
+    def prep(
+        self, data: pl.DataFrame, output=["numpy", "sparse", "narwhals", "pandas"]
+    ) -> Any:
         output = output[0] if isinstance(output, list) else output
         return self.formula.get_model_matrix(data, output=output, na_action="ignore")
 
@@ -24,11 +27,15 @@ class FulgurModel:
         elif isinstance(data, pl.DataFrame):
             data = self.prep(data, output="sparse")
         else:
-            raise TypeError("Internal error; data is neither a Polars LazyFrame nor DataFrame")
+            raise TypeError(
+                "Internal error; data is neither a Polars LazyFrame nor DataFrame"
+            )
         X = data.rhs
         return self.model.predict(X)
-    
-    def fit_with_error(self, data: pl.LazyFrame, error_fn: Callable, verbose: bool = True):
+
+    def fit_with_error(
+        self, data: pl.LazyFrame, error_fn: Callable, verbose: bool = True
+    ):
         # TODO: right now a lot of code is duplicated from fit; at some point refactor
         formula = self.formula.lhs.required_variables
         if len(formula) != 1:
@@ -53,14 +60,14 @@ class FulgurModel:
             error = error_fn(y_truth, y_pred)
             self.error.append(error)
             return (self.model, self.error)
-        
+
         fitted_model = call_py(
             stream_data,
             data=self.data,
             fn=fitting_fn,
             batch_size=self.batch_size,
             last=True,
-            verbose=verbose
+            verbose=verbose,
         )
         self.model, self.error = fitted_model
         self._fitted = True
