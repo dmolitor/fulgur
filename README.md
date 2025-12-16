@@ -38,15 +38,14 @@ We’ll load the airlines dataset from AWS as a [Polars lazy
 DataFrame](https://docs.pola.rs/user-guide/lazy/using/). This dataset
 has approximately 120 million rows which can be too large to fit into
 memory on some computers, particularly when fitting regression models.
-We will then create split the data into a training and evaluation set
-for model assessment.
+We will then split the data into a training and evaluation set for model
+assessment.
 
 ``` python
-# airline = pl.scan_parquet(
-#     "s3://fulgur-large-regression/airline/",
-#     storage_options={"skip_signature": "true"}
-# )
-airline = pl.scan_parquet("./data/airline/")
+airline = pl.scan_parquet(
+    "s3://fulgur-large-regression/airline/",
+    storage_options={"skip_signature": "true"}
+)
 airline = airline.drop("index").with_row_index(offset=1)
 
 # Get train set and an evaluation set
@@ -136,10 +135,10 @@ print(f"OLS RMSE: {round(float(ols_rmse), 3)}")
 
 </details>
 
-    SGD Coefficients: [8.845, 28.661, -1.684]
+    SGD Coefficients: [8.846, 28.68, -1.723]
     OLS Coefficients: [7.034, 26.378, -0.744]
     -----------------------------------------
-    SGD RMSE: 14.182
+    SGD RMSE: 14.185
     OLS RMSE: 14.284
 
 We see that our fulgur SGD-based OLS model achieves similar (slightly
@@ -234,7 +233,7 @@ print(f"Logit Accuracy: {round(float(logit_acc), 3)}")
 
 </details>
 
-    SGD Coefficients: [0.534, 3.817, 0.01]
+    SGD Coefficients: [0.534, 3.818, 0.01]
     Logit Coefficients: [0.869, 4.82, -0.033]
     -----------------------------------------
     Naive Accuracy: 0.543

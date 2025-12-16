@@ -34,14 +34,13 @@ import polars as pl
 We'll load the airlines dataset from AWS as a
 [Polars lazy DataFrame](https://docs.pola.rs/user-guide/lazy/using/). This dataset has approximately
 120 million rows which can be too large to fit into memory on some computers, particularly
-when fitting regression models. We will then create split the data into a training and
+when fitting regression models. We will then split the data into a training and
 evaluation set for model assessment.
 ```{python}
-# airline = pl.scan_parquet(
-#     "s3://fulgur-large-regression/airline/",
-#     storage_options={"skip_signature": "true"}
-# )
-airline = pl.scan_parquet("./data/airline/")
+airline = pl.scan_parquet(
+    "s3://fulgur-large-regression/airline/",
+    storage_options={"skip_signature": "true"}
+)
 airline = airline.drop("index").with_row_index(offset=1)
 
 # Get train set and an evaluation set
