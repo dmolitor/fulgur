@@ -71,10 +71,18 @@ def formula_terms(formula: str) -> List[str]:
         lhs_var = []
     try:
         required_vars = list(formula.required_variables)
-    except:
+    except Exception as _:
         required_vars = list()
     required_vars = [x for x in required_vars if x not in lhs_var]
     return required_vars
+
+def lhs(formula: fml.Formula) -> str:
+    if not hasattr(formula, "lhs"):
+        raise ValueError("The provided formula is missing a response variable")
+    y = formula.lhs.required_variables
+    if len(y) > 1:
+        raise ValueError(f"Formula response variable must be a single variable; currently {formula.lhs}")
+    return y.pop()
 
 def nrow(df: pl.LazyFrame) -> int:
     return df.select(pl.len()).collect(engine="streaming").item()
@@ -100,6 +108,29 @@ def sgd_config_regression(kind: str):
         "huber": ("huber", "l2"),
         "svr_linear": ("epsilon_insensitive", "l2"),
         "svr_squared": ("squared_epsilon_insensitive", "l2"),
+    }
+    if kind not in mapping:
+        raise ValueError(f"Unknown model type: {kind}. Allowed: {list(mapping.keys())}")
+    return mapping[kind]
+
+def sgd_config_classification(kind: str):
+    kind = kind.lower()
+    mapping = {
+        # logistic regression
+        "logistic": ("log_loss", None),
+        "logistic_l1": ("log_loss", "l1"),
+        "logistic_l2": ("log_loss", "l2"),
+        "logistic_elasticnet": ("log_loss", "elasticnet"),
+        # linear SVM
+        "svm": ("hinge", "l2"),
+        "svm_squared": ("squared_hinge", "l2"),
+        "svm_modified": ("modified_huber", "l2"),
+        # perceptron variants
+        "perceptron": ("perceptron", None),
+        # robust losses
+        "huber": ("huber", "l2"),
+        "huber_l1": ("huber", "l1"),
+        "huber_elasticnet": ("huber", "elasticnet")
     }
     if kind not in mapping:
         raise ValueError(f"Unknown model type: {kind}. Allowed: {list(mapping.keys())}")
@@ -157,3 +188,15 @@ def summary_stats(data: pl.LazyFrame, formula: str) -> Dict[str, Dict[str, float
             for col in numeric_cols
         }
     return stats
+
+def unique(data: pl.LazyFrame, col: str):
+    """Get unique values from a LazyFrame column"""
+    return (
+        data
+        .select(pl.col(col))
+        .unique(pl.col(col))
+        .sort(pl.col(col))
+        .collect(engine="streaming")
+        .to_series()
+        .to_numpy()
+    )
