@@ -109,7 +109,7 @@ comparison_data = llm.prep(data.collect(), output="numpy")
 X = comparison_data.rhs
 y = comparison_data.lhs.ravel()
 
-# Fit OLS with statsmodels
+# Fit standard OLS
 ols_model = LinearRegression(fit_intercept=False)
 ols_model.fit(X, y)
 
@@ -135,10 +135,10 @@ print(f"OLS RMSE: {round(float(ols_rmse), 3)}")
 
 </details>
 
-    SGD Coefficients: [8.846, 28.68, -1.723]
+    SGD Coefficients: [8.823, 28.646, -1.694]
     OLS Coefficients: [7.034, 26.378, -0.744]
     -----------------------------------------
-    SGD RMSE: 14.185
+    SGD RMSE: 14.18
     OLS RMSE: 14.284
 
 We see that our fulgur SGD-based OLS model achieves similar (slightly
@@ -206,14 +206,14 @@ comparison_data = llm_cf.prep(data.collect(), output="numpy")
 X = comparison_data.rhs
 y = comparison_data.lhs.ravel()
 
-# Fit OLS with statsmodels
+# Fit standard logistic regression
 lr_model = LogisticRegression(C=np.inf, fit_intercept=False)
 lr_model.fit(X, y)
 
 print(f"SGD Coefficients: {[round(float(x), 3) for x in llm_cf.model.coef_.ravel()]}")
 print(f"Logit Coefficients: {[round(float(x), 3) for x in lr_model.coef_.ravel()]}")
 
-# Compare SGD RMSE to OLS RMSE
+# Compare SGD Accuracy to Logit Accuracy
 pred_data = llm_cf.query(airline_eval) if llm_cf.query else airline_eval
 pred_data = scale_numeric(data=pred_data, stats=stats)
 pred_data = encode_categorical(data=pred_data, formula=llm_cf.formula)

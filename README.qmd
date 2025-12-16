@@ -7,7 +7,7 @@ format: gfm
 <!-- badges: end -->
 
 The goal of fulgur is to facilitate estimating linear models on
-extremely large (e.g. out-of-core) datasets. fulgur provides a simple but flexible interface,
+extremely large (potentially out-of-core) datasets. fulgur provides a simple but flexible interface,
 allowing model specification via formula syntax
 (see [formulaic](https://github.com/matthewwardrop/formulaic) for details),
 and can fit a variety of linear models including OLS, Ridge, Lasso, Elastic Net, etc.
@@ -102,7 +102,7 @@ comparison_data = llm.prep(data.collect(), output="numpy")
 X = comparison_data.rhs
 y = comparison_data.lhs.ravel()
 
-# Fit OLS with statsmodels
+# Fit standard OLS
 ols_model = LinearRegression(fit_intercept=False)
 ols_model.fit(X, y)
 
@@ -187,14 +187,14 @@ comparison_data = llm_cf.prep(data.collect(), output="numpy")
 X = comparison_data.rhs
 y = comparison_data.lhs.ravel()
 
-# Fit OLS with statsmodels
+# Fit standard logistic regression
 lr_model = LogisticRegression(C=np.inf, fit_intercept=False)
 lr_model.fit(X, y)
 
 print(f"SGD Coefficients: {[round(float(x), 3) for x in llm_cf.model.coef_.ravel()]}")
 print(f"Logit Coefficients: {[round(float(x), 3) for x in lr_model.coef_.ravel()]}")
 
-# Compare SGD RMSE to OLS RMSE
+# Compare SGD Accuracy to Logit Accuracy
 pred_data = llm_cf.query(airline_eval) if llm_cf.query else airline_eval
 pred_data = scale_numeric(data=pred_data, stats=stats)
 pred_data = encode_categorical(data=pred_data, formula=llm_cf.formula)
