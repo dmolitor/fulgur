@@ -1,19 +1,19 @@
 [project]
 name = "fulgur"
-version = "0.1.0"
-description = "Large (OOM) linear models"
-# readme = "README.md"
+version = "0.1.2"
+description = "Estimate linear models on extremely large (potentially out-of-core) datasets."
+readme = "README.md"
 authors = [
     { name = "Daniel Molitor", email = "molitdj97@gmail.com" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
-    "cloudpickle>=3.1.2",
-    "formulaic>=1.2.1",
-    "polars>=1.35.2",
-    "pyarrow>=22.0.0",
-    "scikit-learn==1.7.2",
-    "tqdm>=4.67.1",
+    "cloudpickle>=3.0.0",
+    "formulaic>=1.0.0",
+    "polars>=1.0.0",
+    "pyarrow",
+    "scikit-learn>=1.4.0",
+    "tqdm>=4.41.0",
 ]
 
 [build-system]
@@ -25,4 +25,5 @@ dev = [
     "black>=25.12.0",
     "jupyter>=1.1.1",
     "plotnine>=0.15.2",
+    "pytest>=9.0.2",
 ]

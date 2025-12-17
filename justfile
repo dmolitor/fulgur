@@ -68,5 +68,5 @@ publish-testpypi: check-uv
   uv publish --publish-url https://test.pypi.org/legacy/ --project {{justfile_directory()}} --token {{TEST_PYPI_TOKEN}}
 
 # Run tests with PyTest
-test *TEST_ARGS: check-uv
-  uv run pytest {{TEST_ARGS}}
+# test *TEST_ARGS: check-uv
+#   uv run pytest {{TEST_ARGS}}
