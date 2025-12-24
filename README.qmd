@@ -17,6 +17,18 @@ fulgur is built on top of
 learners, and inherits all the corresponding parameters and attributes. Below we demonstrate
 a simple regression and classification problem on a large dataset of airline arrivals.
 
+## Installation
+
+Install with pip (or uv, etc.) from PyPI:
+```
+pip install fulgur
+```
+
+or the development version from GitHub:
+```
+pip install git+https://github.com/dmolitor/fulgur
+```
+
 ## Regression - airline arrival delays
 
 Below we'll demonstrate fitting an OLS regression model to predict airline arrival delay time

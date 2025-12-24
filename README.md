@@ -6,9 +6,9 @@
 <!-- badges: end -->
 
 The goal of fulgur is to facilitate estimating linear models on
-extremely large (e.g. out-of-core) datasets. fulgur provides a simple
-but flexible interface, allowing model specification via formula syntax
-(see [formulaic](https://github.com/matthewwardrop/formulaic) for
+extremely large (potentially out-of-core) datasets. fulgur provides a
+simple but flexible interface, allowing model specification via formula
+syntax (see [formulaic](https://github.com/matthewwardrop/formulaic) for
 details), and can fit a variety of linear models including OLS, Ridge,
 Lasso, Elastic Net, etc.
 
@@ -17,6 +17,16 @@ fulgur is built on top of [scikit-learn’s Stochastic Gradient Descent
 learners, and inherits all the corresponding parameters and attributes.
 Below we demonstrate a simple regression and classification problem on a
 large dataset of airline arrivals.
+
+## Installation
+
+Install with pip (or uv, etc.) from PyPI:
+
+    pip install fulgur
+
+or the development version from GitHub:
+
+    pip install git+https://github.com/dmolitor/fulgur
 
 ## Regression - airline arrival delays
 
@@ -135,10 +145,10 @@ print(f"OLS RMSE: {round(float(ols_rmse), 3)}")
 
 </details>
 
-    SGD Coefficients: [8.823, 28.646, -1.694]
+    SGD Coefficients: [8.881, 28.689, -1.7]
     OLS Coefficients: [7.034, 26.378, -0.744]
     -----------------------------------------
-    SGD RMSE: 14.18
+    SGD RMSE: 14.189
     OLS RMSE: 14.284
 
 We see that our fulgur SGD-based OLS model achieves similar (slightly
@@ -233,7 +243,7 @@ print(f"Logit Accuracy: {round(float(logit_acc), 3)}")
 
 </details>
 
-    SGD Coefficients: [0.534, 3.818, 0.01]
+    SGD Coefficients: [0.534, 3.817, 0.01]
     Logit Coefficients: [0.869, 4.82, -0.033]
     -----------------------------------------
     Naive Accuracy: 0.543
